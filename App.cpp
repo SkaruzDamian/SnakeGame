@@ -27,15 +27,16 @@ Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 int snakeLength = 3;
 int snakeX[64], snakeY[64]; 
 char currentDirection = 'R'; 
+int foodX, foodY;
 
 void setup() {
+  randomSeed(analogRead(0));
   for (int i = 0; i < numScreens; i++) {
     lcds[i].init();
     lcds[i].backlight();
     lcds[i].clear();
   }
-  snakeX[0] = 1; snakeY[0] = 0;
-  snakeX[1] = 0; snakeY[1] = 0;
+  resetGame();
 }
 
 void loop() {
@@ -43,6 +44,10 @@ void loop() {
   if (key) handleInput(key);
   moveSnake();
   if (checkCollision()) resetGame();
+  if (snakeX[0] == foodX && snakeY[0] == foodY) {
+    snakeLength++;
+    generateFood();
+  }
   updateGameDisplay();
   delay(200);
 }
@@ -67,12 +72,31 @@ void moveSnake() {
     case 'L': snakeX[0]--; break;
     case 'R': snakeX[0]++; break;
   }
+  wrapSnake();
 }
 
 bool checkCollision() {
-  if (snakeX[0] < 0 || snakeX[0] >= numCols || snakeY[0] < 0 || snakeY[0] >= numRows * numScreens / 2) return true;
   for (int i = 1; i < snakeLength; i++) {
     if (snakeX[0] == snakeX[i] && snakeY[0] == snakeY[i]) return true;
+  }
+  return false;
+}
+
+void wrapSnake() {
+  snakeX[0] = (snakeX[0] + numCols) % numCols;
+  snakeY[0] = (snakeY[0] + numRows * numScreens) % (numRows * numScreens);
+}
+
+void generateFood() {
+  do {
+    foodX = random(numCols);
+    foodY = random(numRows * numScreens);
+  } while (isFoodOnSnake(foodX, foodY));
+}
+
+bool isFoodOnSnake(int x, int y) {
+  for (int i = 0; i < snakeLength; i++) {
+    if (snakeX[i] == x && snakeY[i] == y) return true;
   }
   return false;
 }
@@ -81,8 +105,14 @@ void updateGameDisplay() {
   for (int i = 0; i < numScreens; i++) {
     lcds[i].clear();
   }
+ 
+  int foodScreenIndex = foodY / numRows;
+  lcds[foodScreenIndex].setCursor(foodX % numCols, foodY % numRows);
+  lcds[foodScreenIndex].write('#');
+  
+
   for (int i = 0; i < snakeLength; i++) {
-    int screenIndex = (snakeY[i] / numRows) * 2 + (snakeX[i] / numCols);
+    int screenIndex = snakeY[i] / numRows;
     int localX = snakeX[i] % numCols;
     int localY = snakeY[i] % numRows;
     lcds[screenIndex].setCursor(localX, localY);
@@ -95,11 +125,7 @@ void resetGame() {
   snakeX[0] = 1; snakeY[0] = 0;
   snakeX[1] = 0; snakeY[1] = 0;
   currentDirection = 'R';
-  for (int i = 0; i < numScreens; i++) {
-    lcds[i].clear();
-    lcds[i].print("Game Over!");
-  }
-  delay(2000);
+  generateFood();
   for (int i = 0; i < numScreens; i++) {
     lcds[i].clear();
   }
