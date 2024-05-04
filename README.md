@@ -1,0 +1,1 @@
+![image](https://github.com/SkaruzDamian/SnakeGame/assets/124455335/1d11d58f-e666-4881-91a8-be9dfa01b057)Tinkercad link: https://www.tinkercad.com/things/k7DEAiFRQbK-spectacular-kieran-tumelo/editel?sharecode=ImYnB_h2OkJ3hJdsJd6ULq-ES4r6LaZfE-Pm1dE2gc8
