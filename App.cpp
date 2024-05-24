@@ -28,6 +28,7 @@ int snakeLength = 3;
 int snakeX[64], snakeY[64]; 
 char currentDirection = 'R'; 
 int foodX, foodY;
+bool gameOver = false;
 
 void setup() {
   randomSeed(analogRead(0));
@@ -40,16 +41,30 @@ void setup() {
 }
 
 void loop() {
-  char key = keypad.getKey();
-  if (key) handleInput(key);
+  if (gameOver) {
+    displayGameOverMessage();
+    return;
+  }
+  
+  bool moved = false;
+  for (int i = 0; i < 5; i++) {  
+    char key = keypad.getKey();
+    if (key && !moved) {
+      handleInput(key);
+      moved = true;
+    }
+  }
   moveSnake();
-  if (checkCollision()) resetGame();
+  if (checkCollision()) {
+    gameOver = true;
+    return;
+  }
   if (snakeX[0] == foodX && snakeY[0] == foodY) {
     snakeLength++;
     generateFood();
   }
   updateGameDisplay();
-  delay(200);
+  delay(2);
 }
 
 void handleInput(char key) {
@@ -72,19 +87,16 @@ void moveSnake() {
     case 'L': snakeX[0]--; break;
     case 'R': snakeX[0]++; break;
   }
-  wrapSnake();
 }
 
 bool checkCollision() {
+  if (snakeX[0] < 0 || snakeX[0] >= numCols || snakeY[0] < 0 || snakeY[0] >= numRows * numScreens) {
+    return true;
+  }
   for (int i = 1; i < snakeLength; i++) {
     if (snakeX[0] == snakeX[i] && snakeY[0] == snakeY[i]) return true;
   }
   return false;
-}
-
-void wrapSnake() {
-  snakeX[0] = (snakeX[0] + numCols) % numCols;
-  snakeY[0] = (snakeY[0] + numRows * numScreens) % (numRows * numScreens);
 }
 
 void generateFood() {
@@ -125,8 +137,17 @@ void resetGame() {
   snakeX[0] = 1; snakeY[0] = 0;
   snakeX[1] = 0; snakeY[1] = 0;
   currentDirection = 'R';
+  gameOver = false;
   generateFood();
   for (int i = 0; i < numScreens; i++) {
     lcds[i].clear();
+  }
+}
+
+void displayGameOverMessage() {
+  for (int i = 0; i < numScreens; i++) {
+    lcds[i].clear();
+    lcds[i].setCursor(0, 0);
+    lcds[i].print("GAME OVER");
   }
 }
